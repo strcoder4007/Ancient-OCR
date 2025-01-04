@@ -12,33 +12,26 @@ class ImageGenerator:
         self.width, self.height = image_size
         self.create_directory(output_dir)
         
-        # Color ranges for yellows (background) and blacks (foreground)
+        # Color ranges for scanned paper/scriptures (only yellows and white for background)
         self.yellow_ranges = [
-            # Light yellows
-            ((255, 255, 220), (255, 255, 240)),
-            # Cream yellows
-            ((255, 253, 208), (255, 253, 225)),
-            # Pale yellows
-            ((255, 250, 190), (255, 250, 210)),
-            # Warm yellows
-            ((255, 245, 170), (255, 245, 190))
+            ((255, 255, 220), (255, 255, 240)),  # Light yellows
+            ((255, 253, 208), (255, 253, 225)),  # Cream yellows
+            ((255, 250, 190), (255, 250, 210)),  # Pale yellows
+            ((255, 245, 170), (255, 245, 190)),  # Warm yellows
+            ((255, 255, 255), (255, 255, 255))   # White
         ]
         
         self.black_ranges = [
-            # Pure black
-            ((0, 0, 0), (20, 20, 20)),
-            # Dark gray
-            ((25, 25, 25), (45, 45, 45)),
-            # Very dark brown
-            ((20, 15, 10), (40, 35, 30)),
-            # Dark blue-black
-            ((10, 10, 20), (30, 30, 40))
+            ((0, 0, 0), (20, 20, 20)),           # Pure black
+            ((25, 25, 25), (50, 50, 50)),        # Dark gray, faded ink
+            ((20, 15, 10), (40, 35, 30)),        # Very dark brown (old ink)
+            ((10, 10, 20), (30, 30, 40))         # Dark blue-black
         ]
         
-        # Noise parameters
+        # Noise parameters (for more faded or dirty textures)
         self.noise_params = {
-            'gaussian': {'mean': 0, 'std': 25},
-            'speckle': {'mean': 0, 'std': 0.15}
+            'gaussian': {'mean': 0, 'std': 15},  # Reduced to make the noise subtler
+            'speckle': {'mean': 0, 'std': 0.05}  # Slight speckle noise to simulate dirt
         }
 
     @staticmethod
@@ -55,7 +48,7 @@ class ImageGenerator:
 
     def text_to_image(self, text: str, font_size: int = 48) -> np.ndarray:
         """Convert text to image with random background and foreground colors"""
-        # Create a new image
+        # Create a new image with a yellow or white background (only yellow and white)
         image = Image.new('RGB', (self.width, self.height), self.get_random_color(self.yellow_ranges))
         draw = ImageDraw.Draw(image)
         
@@ -72,14 +65,14 @@ class ImageGenerator:
         x = (self.width - text_width) // 2
         y = (self.height - text_height) // 2
         
-        # Draw text with random dark color
+        # Draw text with a random dark color resembling old ink
         draw.text((x, y), text, font=font, fill=self.get_random_color(self.black_ranges))
         
         return cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
 
     def rotate_image(self, image: np.ndarray) -> np.ndarray:
-        """Rotate image by random angle"""
-        angle = random.uniform(-20, 20)
+        """Rotate image by random angle to simulate paper bending"""
+        angle = random.uniform(-5, 5)  # Slight rotation
         center = (self.width // 2, self.height // 2)
         rotation_matrix = cv2.getRotationMatrix2D(center, angle, 1.0)
         bg_color = self.get_random_color(self.yellow_ranges)
@@ -88,7 +81,7 @@ class ImageGenerator:
 
     def shear_image(self, image: np.ndarray) -> np.ndarray:
         """Apply random shear transformation"""
-        shear_factor = random.uniform(-0.3, 0.3)
+        shear_factor = random.uniform(-0.2, 0.2)  # Slight shear
         pts1 = np.float32([[0, 0], [self.width, 0], [0, self.height]])
         pts2 = np.float32([[0, 0], [self.width, 0], 
                           [int(shear_factor * self.width), self.height]])
@@ -98,15 +91,15 @@ class ImageGenerator:
                             borderMode=cv2.BORDER_CONSTANT, borderValue=bg_color)
 
     def add_noise(self, image: np.ndarray) -> np.ndarray:
-        """Add random noise to image"""
+        """Add random noise to image to simulate dirt or scanner imperfections"""
         if random.choice([True, False]):
-            # Gaussian noise
+            # Gaussian noise (faded look)
             noise = np.random.normal(self.noise_params['gaussian']['mean'], 
                                    self.noise_params['gaussian']['std'], 
                                    image.shape).astype(np.uint8)
             noisy = cv2.add(image, noise)
         else:
-            # Speckle noise
+            # Speckle noise (dirt)
             noise = np.random.normal(self.noise_params['speckle']['mean'], 
                                    self.noise_params['speckle']['std'], 
                                    image.shape)
@@ -115,15 +108,15 @@ class ImageGenerator:
         return noisy
 
     def apply_blur(self, image: np.ndarray) -> np.ndarray:
-        """Apply random blur to image"""
+        """Apply subtle blur to simulate scanner imperfections"""
         blur_types = [
-            lambda img: cv2.GaussianBlur(img, (3, 3), random.uniform(0.1, 1.0)),
-            lambda img: cv2.blur(img, (3, 3)),
-            lambda img: cv2.medianBlur(img, 3)
+            lambda img: cv2.GaussianBlur(img, (5, 5), random.uniform(0.1, 0.3)),  # Slight blur
+            lambda img: cv2.blur(img, (5, 5)),  # Mild blur
+            lambda img: cv2.medianBlur(img, 5)  # Subtle blur
         ]
         return random.choice(blur_types)(image)
 
-    def process_word_file(self, input_file: str, augmentations_per_word: int = 5) -> None:
+    def process_word_file(self, input_file: str, augmentations_per_word: int = 10) -> None:
         """Process input file and generate augmented images"""
         with open(input_file, 'r', encoding='utf-8') as f:
             words = f.read().splitlines()
@@ -154,7 +147,7 @@ class ImageGenerator:
 def main():
     input_file = "words.txt"  # Replace with your input file name
     generator = ImageGenerator(output_dir='images', image_size=(400, 100))
-    generator.process_word_file(input_file, augmentations_per_word=5)
+    generator.process_word_file(input_file, augmentations_per_word=10)  # Set to 10 for more variations
 
 if __name__ == "__main__":
     main()
