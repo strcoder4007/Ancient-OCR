@@ -4,9 +4,10 @@ import os
 from PIL import Image, ImageDraw, ImageFont
 import random
 from typing import Tuple
+from tqdm import tqdm
 
 class ImageGenerator:
-    def __init__(self, output_dir: str = 'images', image_size: Tuple[int, int] = (400, 100)):
+    def __init__(self, output_dir: str = 'dataset', image_size: Tuple[int, int] = (400, 100)):
         """Initialize the image generator with configuration parameters"""
         self.output_dir = output_dir
         self.width, self.height = image_size
@@ -14,18 +15,18 @@ class ImageGenerator:
         
         # Color ranges for scanned paper/scriptures (only yellows and white for background)
         self.yellow_ranges = [
-            ((255, 255, 220), (255, 255, 240)),  # Light yellows
-            ((255, 253, 208), (255, 253, 225)),  # Cream yellows
-            ((255, 250, 190), (255, 250, 210)),  # Pale yellows
-            ((255, 245, 170), (255, 245, 190)),  # Warm yellows
-            ((255, 255, 255), (255, 255, 255))   # White
+            ((255, 255, 220), (255, 255, 240)),  
+            ((255, 253, 208), (255, 253, 225)),  
+            ((255, 250, 190), (255, 250, 210)), 
+            ((255, 245, 170), (255, 245, 190)), 
+            ((255, 255, 255), (255, 255, 255))
         ]
         
         self.black_ranges = [
-            ((0, 0, 0), (20, 20, 20)),           # Pure black
-            ((25, 25, 25), (50, 50, 50)),        # Dark gray, faded ink
-            ((20, 15, 10), (40, 35, 30)),        # Very dark brown (old ink)
-            ((10, 10, 20), (30, 30, 40))         # Dark blue-black
+            ((0, 0, 0), (20, 20, 20)),
+            ((25, 25, 25), (50, 50, 50)),
+            ((20, 15, 10), (40, 35, 30)),
+            ((10, 10, 20), (30, 30, 40)) 
         ]
         
         # Noise parameters (for more faded or dirty textures)
@@ -110,9 +111,9 @@ class ImageGenerator:
     def apply_blur(self, image: np.ndarray) -> np.ndarray:
         """Apply subtle blur to simulate scanner imperfections"""
         blur_types = [
-            lambda img: cv2.GaussianBlur(img, (5, 5), random.uniform(0.1, 0.3)),  # Slight blur
-            lambda img: cv2.blur(img, (5, 5)),  # Mild blur
-            lambda img: cv2.medianBlur(img, 5)  # Subtle blur
+            lambda img: cv2.GaussianBlur(img, (5, 5), random.uniform(0.1, 0.3)),
+            lambda img: cv2.blur(img, (5, 5)),
+            lambda img: cv2.medianBlur(img, 5) 
         ]
         return random.choice(blur_types)(image)
 
@@ -120,14 +121,10 @@ class ImageGenerator:
         """Process input file and generate augmented images"""
         with open(input_file, 'r', encoding='utf-8') as f:
             words = f.read().splitlines()
-        
-        for i, word in enumerate(words):
-            # Generate multiple variations for each word
-            for j in range(augmentations_per_word):
-                # Create base image with random colors
+
+        for i, word in tqdm(enumerate(words), desc="Processing words", total=len(words)):
+            for j in tqdm(range(augmentations_per_word), desc=f"Generating images for word {word}", leave=False):
                 base_image = self.text_to_image(word)
-                
-                # Apply random augmentations
                 augmented = base_image
                 
                 # Randomly apply transformations
@@ -145,9 +142,9 @@ class ImageGenerator:
                 cv2.imwrite(output_path, augmented)
 
 def main():
-    input_file = "words.txt"  # Replace with your input file name
-    generator = ImageGenerator(output_dir='images', image_size=(400, 100))
-    generator.process_word_file(input_file, augmentations_per_word=10)  # Set to 10 for more variations
+    input_file = "kaithi_1000.txt"
+    generator = ImageGenerator(output_dir='dataset', image_size=(400, 100))
+    generator.process_word_file(input_file, augmentations_per_word=10)
 
 if __name__ == "__main__":
     main()

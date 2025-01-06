@@ -19,7 +19,7 @@ for split in dataset.keys():
 top_words = [word for word, _ in word_counts.most_common(50000)]
 
 
-output_file = 'top_50000_words.txt'
+output_file = 'kaithi_50000.txt'
 with open(output_file, 'w', encoding='utf-8') as f:
     for word in top_words:
         f.write(word + '\n')
