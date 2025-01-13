@@ -107,11 +107,7 @@ class ImageGenerator:
 
     def shear_image(self, image: np.ndarray) -> np.ndarray:
         height, width = image.shape[:2]
-<<<<<<< HEAD
         shear_factor = random.uniform(-0.4, 0.4)  # Increased shear factor for more distortion
-=======
-        shear_factor = random.uniform(-0.2, 0.2)
->>>>>>> f2db6a7abc6f56665e63cb662b98eeaec0b0286c
         
         new_width = width + int(abs(shear_factor * height))
         x_offset = (new_width - width) // 2
@@ -129,16 +125,11 @@ class ImageGenerator:
                             borderValue=bg_color)
 
     def add_noise(self, image: np.ndarray) -> np.ndarray:
-<<<<<<< HEAD
         noise_type = random.choice(['gaussian', 'speckle', 'salt_and_pepper'])
-=======
-        noise_type = random.choice(['gaussian', 'speckle'])
->>>>>>> f2db6a7abc6f56665e63cb662b98eeaec0b0286c
         
         if noise_type == 'gaussian':
             noise = np.random.normal(0, random.uniform(5, 15), image.shape).astype(np.uint8)
             noisy = cv2.add(image, noise)
-<<<<<<< HEAD
         elif noise_type == 'speckle':
             noise = np.random.normal(0, random.uniform(0.02, 0.05), image.shape)
             noisy = image + image * noise
@@ -158,25 +149,14 @@ class ImageGenerator:
             # Pepper noise
             pepper_coords = [np.random.randint(0, i-1, num_pepper) for i in image.shape]
             noisy[pepper_coords[0], pepper_coords[1]] = 0
-=======
-        else:  # speckle
-            noise = np.random.normal(0, random.uniform(0.02, 0.05), image.shape)
-            noisy = image + image * noise
-            noisy = np.clip(noisy, 0, 255).astype(np.uint8)
->>>>>>> f2db6a7abc6f56665e63cb662b98eeaec0b0286c
         
         return noisy
 
     def adjust_brightness_contrast(self, image: np.ndarray) -> np.ndarray:
         pil_image = Image.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
         
-<<<<<<< HEAD
         brightness_factor = random.uniform(0.7, 1.5)  # Increased range for brightness
         contrast_factor = random.uniform(0.7, 1.5)    # Increased range for contrast
-=======
-        brightness_factor = random.uniform(0.8, 1.2)
-        contrast_factor = random.uniform(0.8, 1.2)
->>>>>>> f2db6a7abc6f56665e63cb662b98eeaec0b0286c
         
         enhancer = ImageEnhance.Brightness(pil_image)
         pil_image = enhancer.enhance(brightness_factor)
