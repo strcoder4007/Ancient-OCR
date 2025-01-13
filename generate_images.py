@@ -212,41 +212,25 @@ class ImageGenerator:
                 
                 # Group 2 (5-9): Light augmentation
                 elif j < 10:
-<<<<<<< HEAD
                     if random.random() < 0.8:
                         angle = random.uniform(-5, 5)  # Increased rotation range
                         augmented = self.rotate_image(augmented, angle)
                     if random.random() < 0.6:
-=======
-                    if random.random() < 0.7:
-                        angle = random.uniform(-3, 3)
-                        augmented = self.rotate_image(augmented, angle)
-                    if random.random() < 0.5:
->>>>>>> f2db6a7abc6f56665e63cb662b98eeaec0b0286c
                         augmented = self.adjust_brightness_contrast(augmented)
                 
                 # Group 3 (10-14): Medium augmentation
                 elif j < 15:
                     if random.random() < 0.7:
-<<<<<<< HEAD
                         angle = random.uniform(-7, 7)  # Increased rotation range
                         augmented = self.rotate_image(augmented, angle)
                     if random.random() < 0.8:
                         augmented = self.shear_image(augmented)  # Increased shearing
                     if random.random() < 0.6:
-=======
-                        angle = random.uniform(-5, 5)
-                        augmented = self.rotate_image(augmented, angle)
-                    if random.random() < 0.7:
-                        augmented = self.shear_image(augmented)
-                    if random.random() < 0.5:
->>>>>>> f2db6a7abc6f56665e63cb662b98eeaec0b0286c
                         augmented = self.add_noise(augmented)
                 
                 # Group 4 (15-19): Heavy augmentation
                 else:
                     # Apply multiple augmentations
-<<<<<<< HEAD
                     if random.random() < 0.9:
                         angle = random.uniform(-10, 10)  # Larger rotation
                         augmented = self.rotate_image(augmented, angle)
@@ -257,18 +241,6 @@ class ImageGenerator:
                     if random.random() < 0.7:
                         augmented = self.apply_blur(augmented)
                     if random.random() < 0.8:
-=======
-                    if random.random() < 0.8:
-                        angle = random.uniform(-7, 7)
-                        augmented = self.rotate_image(augmented, angle)
-                    if random.random() < 0.8:
-                        augmented = self.shear_image(augmented)
-                    if random.random() < 0.6:
-                        augmented = self.add_noise(augmented)
-                    if random.random() < 0.6:
-                        augmented = self.apply_blur(augmented)
-                    if random.random() < 0.7:
->>>>>>> f2db6a7abc6f56665e63cb662b98eeaec0b0286c
                         augmented = self.adjust_brightness_contrast(augmented)
                 
                 output_path = os.path.join(self.output_dir, f'word_{i}_aug_{j}.png')
