@@ -62,8 +62,8 @@ class ImageGenerator:
         return bbox, (text_width, text_height)
 
     def calculate_image_size(self, text_width: int, text_height: int) -> Tuple[int, int]:
-        padding_x = int(text_width * 0.2)
-        padding_y = int(text_height * 0.2)
+        padding_x = int(text_width * 0)
+        padding_y = int(text_height * 0)
         
         final_width = text_width + (2 * padding_x)
         final_height = text_height + (2 * padding_y)
