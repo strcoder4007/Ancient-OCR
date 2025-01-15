@@ -4,7 +4,7 @@ import random
 import csv
 import glob
 import re
-from typing import Dict, List, Set, Tuple
+from typing import Dict, List
 from tqdm import tqdm
 
 def create_validation_set(dataset_path: str, labels_file: str, val_augmentations: int = 5):
@@ -33,7 +33,7 @@ def create_validation_set(dataset_path: str, labels_file: str, val_augmentations
         os.makedirs(folder)
         print(f"Created directory: {folder}")
 
-    # Get all image files and group them by word
+    # Get all image files
     image_pattern = os.path.join(dataset_path, 'word_*_aug_*.png')
     all_images = glob.glob(image_pattern)
     
@@ -43,26 +43,25 @@ def create_validation_set(dataset_path: str, labels_file: str, val_augmentations
     
     print(f"Found {len(all_images)} total images")
 
-    # Group images by their word number
-    word_groups: Dict[int, List[Tuple[str, int]]] = {}
+    # Group images by their base word
+    word_groups: Dict[int, List[str]] = {}
     for image_path in tqdm(all_images, desc="Grouping images"):
         filename = os.path.basename(image_path)
         match = re.match(r'word_(\d+)_aug_(\d+)\.png', filename)
         if match:
             word_num = int(match.group(1))
-            aug_num = int(match.group(2))
             if word_num not in word_groups:
                 word_groups[word_num] = []
-            word_groups[word_num].append((filename, aug_num))
+            word_groups[word_num].append(filename)
 
     print(f"Found {len(word_groups)} unique words")
 
-    # Load labels
     labels_dict = {}
     if not os.path.exists(labels_file):
         print(f"Error: Labels file '{labels_file}' does not exist.")
         return
 
+    # Load the labels from the CSV file
     with open(labels_file, 'r', encoding='utf-8') as f:
         reader = csv.DictReader(f)
         for row in reader:
@@ -70,27 +69,23 @@ def create_validation_set(dataset_path: str, labels_file: str, val_augmentations
 
     print(f"Loaded {len(labels_dict)} labels from {labels_file}")
 
+    # Prepare lists for validation and training files
     validation_files = []
     training_files = []
 
-    # For each word, randomly select augmentations for validation
-    for word_num, files_and_augs in tqdm(word_groups.items(), desc="Splitting datasets"):
-        # Sort by augmentation number to ensure consistent ordering
-        files_and_augs.sort(key=lambda x: x[1])
-        
-        # Select random augmentations for validation
-        total_augs = len(files_and_augs)
+    # Split images into validation and training sets
+    for word_num, files in tqdm(word_groups.items(), desc="Splitting datasets"):
+        total_augs = len(files)
         val_indices = set(random.sample(range(total_augs), val_augmentations))
-        
-        # Split files between training and validation
-        for idx, (filename, _) in enumerate(files_and_augs):
+
+        for idx, filename in enumerate(files):
             if idx in val_indices:
                 validation_files.append(filename)
             else:
                 training_files.append(filename)
 
     def move_files_and_create_labels(file_list: List[str], destination_folder: str, 
-                                   labels_output_file: str) -> None:
+                                      labels_output_file: str) -> None:
         """
         Move files to destination and create corresponding labels file.
         """
@@ -107,13 +102,14 @@ def create_validation_set(dataset_path: str, labels_file: str, val_augmentations
                 
                 try:
                     if os.path.exists(source_path):
-                        shutil.move(source_path, destination_path)  # Changed from copy2 to move
+                        # Ensure the destination directory exists
+                        os.makedirs(os.path.dirname(destination_path), exist_ok=True)
+                        shutil.move(source_path, destination_path)
                         successful_moves += 1
                         
-                        # Get the base filename to find the label
-                        base_filename = re.sub(r'aug_\d+', 'aug_0', filename)
-                        if base_filename in labels_dict:
-                            writer.writerow([filename, labels_dict[base_filename]])
+                        # Look up the label for this image
+                        if filename in labels_dict:
+                            writer.writerow([filename, labels_dict[filename]])
                         else:
                             print(f"Warning: No label found for {filename}")
                             failed_moves += 1
@@ -159,12 +155,12 @@ def create_validation_set(dataset_path: str, labels_file: str, val_augmentations
     total_files = len(training_files) + len(validation_files)
     print(f"  - Training: {len(training_files)/total_files:.1%}")
     print(f"  - Validation: {len(validation_files)/total_files:.1%}")
-    print(f"  - {20-val_augmentations} augmentations per word in training")
+    print(f"  - {total_augs-val_augmentations} augmentations per word in training")
     print(f"  - {val_augmentations} augmentations per word in validation")
 
 if __name__ == "__main__":
     dataset_folder = "all_data"
-    labels_csv_file = "labels.csv"
-    validation_augmentations = 3
+    labels_csv_file = "all_data/labels.csv"
+    validation_augmentations = 3  # Adjust as necessary
     
     create_validation_set(dataset_folder, labels_csv_file, validation_augmentations)
