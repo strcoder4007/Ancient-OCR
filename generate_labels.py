@@ -24,6 +24,6 @@ def duplicate_words(input_file, output_file, repeat_count=10):
         print(f"An error occurred: {e}")
 
 if __name__ == "__main__":
-    input_file = "kaithi_12k.txt"
+    input_file = "kaithi_10.txt"
     output_file = "labels.csv"
     duplicate_words(input_file, output_file)

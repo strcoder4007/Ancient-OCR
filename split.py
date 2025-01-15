@@ -163,8 +163,8 @@ def create_validation_set(dataset_path: str, labels_file: str, val_augmentations
     print(f"  - {val_augmentations} augmentations per word in validation")
 
 if __name__ == "__main__":
-    dataset_folder = "dataset"  # Path to your dataset folder
-    labels_csv_file = "labels.csv"  # Path to the input labels.csv
-    validation_augmentations = 5  # Number of augmentations per word to use for validation
+    dataset_folder = "all_data"
+    labels_csv_file = "labels.csv"
+    validation_augmentations = 3
     
     create_validation_set(dataset_folder, labels_csv_file, validation_augmentations)
