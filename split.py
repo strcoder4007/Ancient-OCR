@@ -161,6 +161,6 @@ def create_validation_set(dataset_path: str, labels_file: str, val_augmentations
 if __name__ == "__main__":
     dataset_folder = "all_data"
     labels_csv_file = "all_data/labels.csv"
-    validation_augmentations = 3  # Adjust as necessary
+    validation_augmentations = 2
     
     create_validation_set(dataset_folder, labels_csv_file, validation_augmentations)

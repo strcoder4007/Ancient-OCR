@@ -15,12 +15,10 @@ class ImageGenerator:
         self.black = (0, 0, 0)
         self.labels_file = os.path.join(output_dir, 'labels.csv')
         
-        # Initialize CSV file with header (only once)
         with open(self.labels_file, 'w', newline='', encoding='utf-8') as f:
             writer = csv.writer(f)
-            writer.writerow(['filename', 'words'])  # Only write header once
+            writer.writerow(['filename', 'words'])
 
-        # Standard height for all text images
         self.standard_height = 64
 
     def get_random_font(self):
@@ -39,7 +37,7 @@ class ImageGenerator:
         img = Image.new('RGB', (text_width, text_height), random.choice(self.white_shades))
         draw = ImageDraw.Draw(img)
         draw.text((-bbox[0], -bbox[1]), text, font=font, fill=self.black)
-        # Convert to OpenCV format and resize to standard height
+        
         cv_img = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
         aspect_ratio = cv_img.shape[1] / cv_img.shape[0]
         new_width = int(self.standard_height * aspect_ratio)
@@ -99,10 +97,10 @@ class ImageGenerator:
         return cv2.warpPerspective(image, matrix, (width, height), borderMode=cv2.BORDER_CONSTANT, borderValue=random.choice(self.white_shades))
 
     def save_label(self, filename, label):
-        # Open the CSV file in append mode and write the label
+        
         with open(self.labels_file, 'a', newline='', encoding='utf-8') as f:
             writer = csv.writer(f)
-            writer.writerow([filename, label])  # Write the filename and label
+            writer.writerow([filename, label])
 
     def process_word_file(self, input_file: str, augmentations_per_word: int = 15):
         with open(input_file, 'r', encoding='utf-8') as f:
@@ -129,114 +127,10 @@ class ImageGenerator:
                 filename = f'word_{i}_aug_{j}.png'
                 output_path = os.path.join(self.output_dir, filename)
                 cv2.imwrite(output_path, augmented)
-                self.save_label(filename, word)  # Save the label
-
-            # Generate 5 additional augmentations by combining the word with a second random word
-            for k in range(5):
-                second_word = random.choice(words)
-                combined_image = self.combine_words(word, second_word)
-                combined_label = f"{word} {second_word}"
-                filename = f'word_{i}_aug_{k+15}.png'
-                output_path_combined = os.path.join(self.output_dir, filename)
-                cv2.imwrite(output_path_combined, combined_image)
-                self.save_label(filename, combined_label) 
-
-    def process_word_file(self, input_file: str, augmentations_per_word: int = 15):
-        with open(input_file, 'r', encoding='utf-8') as f:
-            words = f.read().splitlines()
-
-        for i, word in tqdm(enumerate(words), desc="Processing words", total=len(words)):
-            for j in range(augmentations_per_word):
-                base_image = self.text_to_image(word)
-                augmented = base_image.copy()
-                if j < 7:
-                    if random.random() < 0.5: augmented = self.rotate_image(augmented, random.uniform(-2.5, 2.5))
-                    if random.random() < 0.6: augmented = self.adjust_brightness_contrast(augmented)
-                    if random.random() < 0.4: augmented = self.apply_zoom(augmented)
-                    if random.random() < 0.3: augmented = self.shear_image(augmented)
-                elif j < 15:
-                    if random.random() < 0.5: augmented = self.rotate_image(augmented, random.uniform(-3, 3))
-                    if random.random() < 0.6: augmented = self.shear_image(augmented)
-                    if random.random() < 0.6: augmented = self.apply_zoom(augmented)
-                    if random.random() < 0.6: augmented = self.apply_perspective_transform(augmented)
-
-                if augmented.shape[:2] != base_image.shape[:2]:
-                    augmented = cv2.resize(augmented, (base_image.shape[1], base_image.shape[0]))
-                
-                filename = f'word_{i}_aug_{j}.png'
-                output_path = os.path.join(self.output_dir, filename)
-                cv2.imwrite(output_path, augmented)
-                self.save_label(filename, word)  # Save the label for the single word
-
-            # Generate 5 additional augmentations by combining the word with a second random word
-            for k in range(5):
-                second_word = random.choice(words)
-                combined_image = self.combine_words(word, second_word)
-                combined_label = f"{word} {second_word}"
-
-                filename = f'word_{i}_aug_{k+15}.png'
-                output_path_combined = os.path.join(self.output_dir, filename)
-                cv2.imwrite(output_path_combined, combined_image)
-                
-                # Save combined label correctly
-                self.save_label(filename, combined_label)  # Save the combined label (word1 + word2)
-
-    def combine_words(self, word1, word2):
-        # Generate both images at standard height
-        first_image = self.text_to_image(word1)
-        second_image = self.text_to_image(word2)
-        
-        # Apply the same augmentations to both images
-        augmented_first_image = first_image.copy()
-        augmented_second_image = second_image.copy()
-
-        # Apply the same augmentations pipeline for both images
-        if random.random() < 0.5: 
-            angle = random.uniform(-2.5, 2.5)
-            augmented_first_image = self.rotate_image(augmented_first_image, angle)
-            augmented_second_image = self.rotate_image(augmented_second_image, angle)
-
-        if random.random() < 0.6:
-            augmented_first_image = self.adjust_brightness_contrast(augmented_first_image)
-            augmented_second_image = self.adjust_brightness_contrast(augmented_second_image)
-
-        if random.random() < 0.4:
-            augmented_first_image = self.apply_zoom(augmented_first_image)
-            augmented_second_image = self.apply_zoom(augmented_second_image)
-
-        if random.random() < 0.3:
-            augmented_first_image = self.shear_image(augmented_first_image)
-            augmented_second_image = self.shear_image(augmented_second_image)
-
-        if random.random() < 0.6:
-            augmented_first_image = self.apply_perspective_transform(augmented_first_image)
-            augmented_second_image = self.apply_perspective_transform(augmented_second_image)
-
-        # Resize both images to the standard height
-        if augmented_first_image.shape[0] != self.standard_height:
-            augmented_first_image = cv2.resize(augmented_first_image, 
-                                            (augmented_first_image.shape[1], self.standard_height))
-        if augmented_second_image.shape[0] != self.standard_height:
-            augmented_second_image = cv2.resize(augmented_second_image, 
-                                                (augmented_second_image.shape[1], self.standard_height))
-
-        # Calculate space width (approximately 25% of average character width)
-        avg_char_width = (augmented_first_image.shape[1] / len(word1) + augmented_second_image.shape[1] / len(word2)) / 2
-        space_width = int(avg_char_width * 0.5)
-        
-        # Combine images horizontally with space
-        combined_width = augmented_first_image.shape[1] + space_width + augmented_second_image.shape[1]
-        combined_image = np.full((self.standard_height, combined_width, 3), fill_value=255, dtype=np.uint8)
-        
-        # Place the first and second images into the combined image
-        combined_image[:, :augmented_first_image.shape[1]] = augmented_first_image
-        combined_image[:, augmented_first_image.shape[1] + space_width:] = augmented_second_image
-        
-        return combined_image
-
+                self.save_label(filename, word)
 
 def main():
-    input_file = "kaithi_20k.txt"
+    input_file = "kaithi_15k.txt"
     generator = ImageGenerator(output_dir='all_data')
     generator.process_word_file(input_file, augmentations_per_word=15)
 
