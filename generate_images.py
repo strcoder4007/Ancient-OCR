@@ -142,7 +142,7 @@ class ImageGenerator:
 
 def main():
     input_file = "kaithi_15k.txt"
-    generator = ImageGenerator(output_dir='all_data')
+    generator = ImageGenerator(output_dir='EasyOCR/trainer/all_data')
     generator.process_word_file(input_file, augmentations_per_word=15)
 
 if __name__ == "__main__":
