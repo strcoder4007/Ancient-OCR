@@ -97,10 +97,15 @@ class ImageGenerator:
         return cv2.warpPerspective(image, matrix, (width, height), borderMode=cv2.BORDER_CONSTANT, borderValue=random.choice(self.white_shades))
 
     def save_label(self, filename, label):
-        
         with open(self.labels_file, 'a', newline='', encoding='utf-8') as f:
             writer = csv.writer(f)
             writer.writerow([filename, label])
+
+    def apply_low_resolution(self, image):
+        height, width = image.shape[:2]
+        scale_factor = random.choice([2, 5])        
+        low_res = cv2.resize(image, (width // scale_factor, height // scale_factor), interpolation=cv2.INTER_LINEAR)
+        return cv2.resize(low_res, (width, height), interpolation=cv2.INTER_LINEAR)
 
     def process_word_file(self, input_file: str, augmentations_per_word: int = 15):
         with open(input_file, 'r', encoding='utf-8') as f:
@@ -110,24 +115,30 @@ class ImageGenerator:
             for j in range(augmentations_per_word):
                 base_image = self.text_to_image(word)
                 augmented = base_image.copy()
-                if j < 7:
-                    if random.random() < 0.5: augmented = self.rotate_image(augmented, random.uniform(-2.5, 2.5))
-                    if random.random() < 0.6: augmented = self.adjust_brightness_contrast(augmented)
-                    if random.random() < 0.4: augmented = self.apply_zoom(augmented)
-                    if random.random() < 0.3: augmented = self.shear_image(augmented)
-                elif j < 15:
+
+                # Apply regular augmentations (rotation, brightness, zoom, shear, etc.)
+                if random.random() < 0.5: augmented = self.rotate_image(augmented, random.uniform(-2.5, 2.5))
+                if random.random() < 0.6: augmented = self.adjust_brightness_contrast(augmented)
+                if random.random() < 0.4: augmented = self.apply_zoom(augmented)
+                if random.random() < 0.3: augmented = self.shear_image(augmented)
+
+                if j >= 7:
                     if random.random() < 0.5: augmented = self.rotate_image(augmented, random.uniform(-3, 3))
                     if random.random() < 0.6: augmented = self.shear_image(augmented)
                     if random.random() < 0.6: augmented = self.apply_zoom(augmented)
                     if random.random() < 0.6: augmented = self.apply_perspective_transform(augmented)
 
+                if random.random() < 0.7:  # 70% chance to apply low resolution
+                    augmented = self.apply_low_resolution(augmented)
+
                 if augmented.shape[:2] != base_image.shape[:2]:
                     augmented = cv2.resize(augmented, (base_image.shape[1], base_image.shape[0]))
-                
+
                 filename = f'word_{i}_aug_{j}.png'
                 output_path = os.path.join(self.output_dir, filename)
                 cv2.imwrite(output_path, augmented)
                 self.save_label(filename, word)
+
 
 def main():
     input_file = "kaithi_15k.txt"
