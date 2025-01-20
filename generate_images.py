@@ -115,8 +115,7 @@ class ImageGenerator:
             for j in range(augmentations_per_word):
                 base_image = self.text_to_image(word)
                 augmented = base_image.copy()
-
-                # Apply regular augmentations (rotation, brightness, zoom, shear, etc.)
+                
                 if random.random() < 0.5: augmented = self.rotate_image(augmented, random.uniform(-2.5, 2.5))
                 if random.random() < 0.6: augmented = self.adjust_brightness_contrast(augmented)
                 if random.random() < 0.4: augmented = self.apply_zoom(augmented)
@@ -128,7 +127,7 @@ class ImageGenerator:
                     if random.random() < 0.6: augmented = self.apply_zoom(augmented)
                     if random.random() < 0.6: augmented = self.apply_perspective_transform(augmented)
 
-                if random.random() < 0.7:  # 70% chance to apply low resolution
+                if random.random() < 0.7:
                     augmented = self.apply_low_resolution(augmented)
 
                 if augmented.shape[:2] != base_image.shape[:2]:
