@@ -7,7 +7,7 @@ from tqdm import tqdm
 import csv
 
 class ImageGenerator:
-    def __init__(self, input_dir: str, labels_file: str, output_dir: str = 'all_data', min_zoom: float = 0.8, max_zoom: float = 1.0):
+    def __init__(self, input_dir: str, labels_file: str, output_dir: str = 'all_data', min_zoom: float = 0.6, max_zoom: float = 1.0):
         self.input_dir = input_dir
         self.labels_file = labels_file
         self.output_dir = output_dir
@@ -59,8 +59,6 @@ class ImageGenerator:
         pil_img = Image.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
         enhancer = ImageEnhance.Brightness(pil_img)
         pil_img = enhancer.enhance(random.uniform(0.8, 1.2))
-        enhancer = ImageEnhance.Contrast(pil_img)
-        pil_img = enhancer.enhance(random.uniform(0.8, 1.2))
         pil_img = self.remove_noise_using_contours(pil_img)
         grayscale_img = cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2GRAY)
         return grayscale_img
@@ -81,7 +79,6 @@ class ImageGenerator:
         else:
             return rotated_image
 
-
     def remove_noise_using_contours(self, image):
         if isinstance(image, Image.Image):
             image = np.array(image)
@@ -94,23 +91,16 @@ class ImageGenerator:
         mask = np.zeros_like(gray)
         for contour in contours:
             area = cv2.contourArea(contour)
-            if area > 500:  
+            if area > 500:
                 cv2.drawContours(mask, [contour], -1, (255), thickness=cv2.FILLED)
-
-        # Use the mask to keep only the text regions
         result = cv2.bitwise_and(image, image, mask=mask)
-
         return result
-
-
-            
 
     def apply_zoom(self, image):
         zoom_factor = random.uniform(self.min_zoom, self.max_zoom)
         height, width = image.shape[:2]
         new_height, new_width = int(height * zoom_factor), int(width * zoom_factor)
         zoomed = cv2.resize(image, (new_width, new_height), interpolation=cv2.INTER_LINEAR)
-        
         if zoom_factor < 1:
             top_pad = (height - new_height) // 2
             left_pad = (width - new_width) // 2
@@ -118,14 +108,11 @@ class ImageGenerator:
         else:
             start_y, start_x = (new_height - height) // 2, (new_width - width) // 2
             zoomed = zoomed[start_y:start_y + height, start_x:start_x + width]
-
         zoomed = self.remove_noise_using_contours(zoomed)
-
         if len(zoomed.shape) == 3:
             return cv2.cvtColor(zoomed, cv2.COLOR_BGR2GRAY)
         else:
             return zoomed
-
 
     def shear_image(self, image):
         shear_factor = random.uniform(-0.15, 0.15)
@@ -140,7 +127,6 @@ class ImageGenerator:
             return cv2.cvtColor(sheared_image, cv2.COLOR_BGR2GRAY)
         else:
             return sheared_image
-
 
     def apply_perspective_transform(self, image):
         height, width = image.shape[:2]
@@ -158,20 +144,16 @@ class ImageGenerator:
         else:
             return transformed_image
 
-
     def save_label(self, filename, label):
         with open(self.output_labels_file, 'a', newline='', encoding='utf-8') as f:
             writer = csv.writer(f)
             writer.writerow([filename, label])
-
 
     def apply_low_resolution(self, image):
         height, width = image.shape[:2]
         scale_factor = random.choice([2, 5])        
         low_res = cv2.resize(image, (width // scale_factor, height // scale_factor), interpolation=cv2.INTER_LINEAR)
         return cv2.resize(low_res, (width, height), interpolation=cv2.INTER_LINEAR)
-
-        
 
     def process_images_in_folder(self, augmentations_per_image: int = 15):
         image_files = [f for f in os.listdir(self.input_dir) if f.endswith('.png')]
@@ -189,8 +171,7 @@ class ImageGenerator:
                 augmented = base_image.copy()
                 
                 if random.random() < 0.5: augmented = self.rotate_image(augmented, random.uniform(-2.5, 2.5))
-                if random.random() < 0.6: augmented = self.adjust_brightness_contrast(augmented)
-                if random.random() < 0.4: augmented = self.apply_zoom(augmented)
+                if random.random() < 0.7: augmented = self.apply_zoom(augmented)
                 if random.random() < 0.3: augmented = self.shear_image(augmented)
 
                 if j >= 7:
@@ -198,6 +179,8 @@ class ImageGenerator:
                     if random.random() < 0.6: augmented = self.shear_image(augmented)
                     if random.random() < 0.6: augmented = self.apply_zoom(augmented)
                     if random.random() < 0.6: augmented = self.apply_perspective_transform(augmented)
+
+                if random.random() < 0.6: augmented = self.adjust_brightness_contrast(augmented)
 
                 if random.random() < 0.3:
                     augmented = self.apply_low_resolution(augmented)
@@ -207,9 +190,12 @@ class ImageGenerator:
 
                 output_filename = f'{filename.split(".")[0]}_aug_{j}.png'
                 output_path = os.path.join(self.output_dir, output_filename)
+                
+                if len(augmented.shape) == 3:
+                    augmented = cv2.cvtColor(augmented, cv2.COLOR_BGR2GRAY)
+
                 cv2.imwrite(output_path, augmented)
                 self.save_label(output_filename, label)
-
 
 def main():
     input_dir = "cropped_images"
