@@ -8,24 +8,13 @@ from typing import Dict, List
 from tqdm import tqdm
 
 def create_validation_set(dataset_path: str, labels_file: str, val_augmentations: int = 5):
-    """
-    Splits augmentations of each word between training and validation sets.
-    
-    Args:
-        dataset_path: Path to the dataset folder containing images
-        labels_file: Path to the input labels CSV file
-        val_augmentations: Number of augmentations per word to use for validation (default: 5)
-    """
-    # Verify dataset path exists
     if not os.path.exists(dataset_path):
         print(f"Error: Dataset path '{dataset_path}' does not exist.")
         return
 
-    # Define and create output directories
     train_folder = os.path.join(dataset_path, 'kthi_train_filtered')
     val_folder = os.path.join(dataset_path, 'kthi_val')
 
-    # Create directories if they don't exist
     for folder in [train_folder, val_folder]:
         if os.path.exists(folder):
             # Clear existing directory
@@ -33,7 +22,6 @@ def create_validation_set(dataset_path: str, labels_file: str, val_augmentations
         os.makedirs(folder)
         print(f"Created directory: {folder}")
 
-    # Get all image files
     image_pattern = os.path.join(dataset_path, 'word_*_aug_*.png')
     all_images = glob.glob(image_pattern)
     
@@ -43,7 +31,6 @@ def create_validation_set(dataset_path: str, labels_file: str, val_augmentations
     
     print(f"Found {len(all_images)} total images")
 
-    # Group images by their base word
     word_groups: Dict[int, List[str]] = {}
     for image_path in tqdm(all_images, desc="Grouping images"):
         filename = os.path.basename(image_path)
@@ -61,7 +48,6 @@ def create_validation_set(dataset_path: str, labels_file: str, val_augmentations
         print(f"Error: Labels file '{labels_file}' does not exist.")
         return
 
-    # Load the labels from the CSV file
     with open(labels_file, 'r', encoding='utf-8') as f:
         reader = csv.DictReader(f)
         for row in reader:
@@ -69,11 +55,9 @@ def create_validation_set(dataset_path: str, labels_file: str, val_augmentations
 
     print(f"Loaded {len(labels_dict)} labels from {labels_file}")
 
-    # Prepare lists for validation and training files
     validation_files = []
     training_files = []
 
-    # Split images into validation and training sets
     for word_num, files in tqdm(word_groups.items(), desc="Splitting datasets"):
         total_augs = len(files)
         val_indices = set(random.sample(range(total_augs), val_augmentations))
@@ -86,9 +70,6 @@ def create_validation_set(dataset_path: str, labels_file: str, val_augmentations
 
     def move_files_and_create_labels(file_list: List[str], destination_folder: str, 
                                       labels_output_file: str) -> None:
-        """
-        Move files to destination and create corresponding labels file.
-        """
         successful_moves = 0
         failed_moves = 0
         
@@ -122,7 +103,6 @@ def create_validation_set(dataset_path: str, labels_file: str, val_augmentations
 
         return successful_moves, failed_moves
 
-    # Move files and create labels for both sets
     print("\nProcessing validation set...")
     val_success, val_failed = move_files_and_create_labels(
         validation_files,
@@ -137,7 +117,6 @@ def create_validation_set(dataset_path: str, labels_file: str, val_augmentations
         os.path.join(train_folder, 'labels.csv')
     )
 
-    # Print detailed summary
     print(f"\nProcessing Complete!")
     print(f"Training Set:")
     print(f"  - Successful moves: {train_success}")
@@ -159,8 +138,8 @@ def create_validation_set(dataset_path: str, labels_file: str, val_augmentations
     print(f"  - {val_augmentations} augmentations per word in validation")
 
 if __name__ == "__main__":
-    dataset_folder = "EasyOCR/trainer/all_data"
-    labels_csv_file = "EasyOCR/trainer/all_data/labels.csv"
-    validation_augmentations = 2
+    dataset_folder = "all_data"
+    labels_csv_file = "all_data/labels.csv"
+    validation_augmentations = 3
     
     create_validation_set(dataset_folder, labels_csv_file, validation_augmentations)
