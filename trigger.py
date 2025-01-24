@@ -19,6 +19,28 @@ def run_script(script_name):
         print(f"✗ Could not find {script_name}")
         sys.exit(1)
 
+def delete_folder(folder_name):
+    """Deletes the specified folder if it exists."""
+    if os.path.exists(folder_name):
+        print(f"Deleting existing '{folder_name}' folder...")
+        try:
+            shutil.rmtree(folder_name)
+            print(f"✓ '{folder_name}' folder deleted successfully.")
+        except Exception as e:
+            print(f"✗ Error deleting '{folder_name}' folder: {str(e)}")
+            sys.exit(1)
+
+def delete_file(file_name):
+    """Deletes the specified file if it exists."""
+    if os.path.exists(file_name):
+        print(f"Deleting existing '{file_name}' file...")
+        try:
+            os.remove(file_name)
+            print(f"✓ '{file_name}' file deleted successfully.")
+        except Exception as e:
+            print(f"✗ Error deleting '{file_name}' file: {str(e)}")
+            sys.exit(1)
+
 def main():
     # Check if "all_data" folder exists and delete it if it does
     if os.path.exists("all_data"):
@@ -32,7 +54,9 @@ def main():
     
     # List of scripts to run in order
     scripts = [
-        "generate_images.py",
+        "extract_images.py",
+        "crop_images.py",
+        "process_images.py",
         "split.py"
     ]
     
@@ -49,6 +73,10 @@ def main():
     # Run each script in sequence
     for script in scripts:
         run_script(script)
+    
+    delete_folder("cropped_images")
+    delete_folder("extracted_images")
+    delete_file("labels.csv")
     
     print("\n✓ Pipeline completed successfully!")
 
